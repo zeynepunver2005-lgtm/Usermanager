@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bloom</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="navbar-logo">✦ bloom</a>
+    <div class="navbar-right" id="navbar-right">
+      <button class="btn-outline" onclick="openModal()">Login</button>
+      <button class="btn-primary" onclick="openRegisterModal()">Registrieren</button>
+    </div>
+  </nav>
+
+  <!-- LOGIN MODAL -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal-box" style="position:relative">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-title">✦ willkommen</div>
+      <input type="text" id="login-username" placeholder="Benutzername">
+      <input type="password" id="login-password" placeholder="Passwort">
+      <div class="error-msg" id="login-error"></div>
+      <button class="btn-primary" style="width:100%;padding:10px" onclick="handleLogin()">Anmelden</button>
+    </div>
+  </div>
+
+  <!-- REGISTER MODAL -->
+  <div class="modal-overlay" id="register-modal">
+    <div class="modal-box" style="position:relative">
+      <button class="modal-close" onclick="closeRegisterModal()">✕</button>
+      <div class="modal-title">✦ mitmachen</div>
+      <input type="text" id="reg-firstname" placeholder="Vorname">
+      <input type="text" id="reg-lastname" placeholder="Nachname">
+      <input type="text" id="reg-username" placeholder="Benutzername">
+      <input type="email" id="reg-email" placeholder="E-Mail">
+      <input type="password" id="reg-password" placeholder="Passwort">
+      <div class="error-msg" id="register-error"></div>
+      <button class="btn-primary" style="width:100%;padding:10px" onclick="handleRegister()">Registrieren</button>
+    </div>
+  </div>
+
+  <!-- FEED -->
+  <div class="feed-container">
+
+    <!-- YENİ POST KUTUSU (sadece login sonrası görünür) -->
+    <div class="new-post-box" id="new-post-box" style="display:none">
+      <div class="avatar avatar-purple" id="new-post-avatar">?</div>
+      <textarea id="new-post-text" placeholder="Was denkst du gerade...?"></textarea>
+      <button class="btn-primary" onclick="createPost()">Posten</button>
+    </div>
+
+    <!-- POSTLAR -->
+    <div id="feed"></div>
+
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
