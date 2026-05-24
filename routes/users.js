@@ -96,6 +96,7 @@ router.post('/login', async (req, res) => {
     if (!match) return res.status(400).json({ error: 'Ungültige Anmeldedaten' });
 
     req.session.userId = user.userId;
+    req.session.username = user.username;
     res.json({ message: 'Angemeldet', userId: user.userId });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -106,6 +107,12 @@ router.post('/login', async (req, res) => {
 router.post('/logout', isLoggedIn, (req, res) => {
   req.session.destroy();
   res.json({ message: 'Abgemeldet' });
+});
+
+// GET /api/users/me — aktif kullanıcı
+router.get('/me', (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Nicht angemeldet' });
+  res.json({ userId: req.session.userId, username: req.session.username });
 });
 
 module.exports = router;
