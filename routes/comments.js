@@ -30,9 +30,9 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', isLoggedIn, async (req, res) => {
   try {
-    const { text, origin } = req.body;
+    const { text, origin, parentId } = req.body;
     if (!text || !origin) return res.status(400).json({ error: 'Text und origin erforderlich' });
-    const id = await createComment(text, origin, req.session.userId);
+    const id = await createComment(text, origin, req.session.userId, parentId || null);
     res.status(201).json({ commentId: id });
   } catch (err) {
     res.status(500).json({ error: err.message });

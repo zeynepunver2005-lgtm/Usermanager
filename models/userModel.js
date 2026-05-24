@@ -2,13 +2,13 @@ const db = require('../db/connection');
 const bcrypt = require('bcryptjs');
 
 const getAllUsers = async () => {
-  const [rows] = await db.query('SELECT userId, firstname, lastname, username, email FROM User');
+  const [rows] = await db.query('SELECT userId, firstname, lastname, username, email, bio FROM User');
   return rows;
 };
 
 const getUserById = async (id) => {
   const [rows] = await db.query(
-    'SELECT userId, firstname, lastname, username, email FROM User WHERE userId = ?',
+    'SELECT userId, firstname, lastname, username, email, bio FROM User WHERE userId = ?',
     [id]
   );
   return rows[0];
@@ -23,11 +23,11 @@ const createUser = async (firstname, lastname, username, email, password) => {
   return result.insertId;
 };
 
-const updateUser = async (id, firstname, lastname, username, email, password) => {
+const updateUser = async (id, firstname, lastname, username, email, password, bio) => {
   const hashed = await bcrypt.hash(password, 10);
   const [result] = await db.query(
-    'UPDATE User SET firstname=?, lastname=?, username=?, email=?, password=? WHERE userId=?',
-    [firstname, lastname, username, email, hashed, id]
+    'UPDATE User SET firstname=?, lastname=?, username=?, email=?, password=?, bio=? WHERE userId=?',
+    [firstname, lastname, username, email, hashed, bio, id]
   );
   return result.affectedRows;
 };
