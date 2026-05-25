@@ -7,6 +7,32 @@ const isLoggedIn = (req, res, next) => {
   next();
 };
 
+/**
+ * @api {get} /posts Liste aller Posts
+ * @apiName GetAllPosts
+ * @apiGroup Post
+ *
+ * @apiSuccess {Object[]} posts Liste aller Posts.
+ * @apiSuccess {Number} posts.postId ID des Posts.
+ * @apiSuccess {String} posts.text Inhalt des Posts.
+ * @apiSuccess {String} posts.creationDate Erstellungsdatum.
+ * @apiSuccess {Number} posts.creator Benutzer-ID des Erstellers.
+ * @apiSuccess {String} posts.username Benutzername des Erstellers.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ *       {
+ *         "postId": 1,
+ *         "text": "Hallo Welt!",
+ *         "creationDate": "2026-05-24T12:00:00.000Z",
+ *         "creator": 1,
+ *         "username": "maxm"
+ *       }
+ *     ]
+ *
+ * @apiError (500) InternalServerError Datenbankfehler.
+ */
 router.get('/', async (req, res) => {
   try {
     const posts = await getAllPosts();
@@ -16,6 +42,34 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * @api {get} /posts/:id Post nach ID
+ * @apiName GetPostById
+ * @apiGroup Post
+ *
+ * @apiParam {Number} id Post-ID.
+ *
+ * @apiSuccess {Number} postId ID des Posts.
+ * @apiSuccess {String} text Inhalt des Posts.
+ * @apiSuccess {String} creationDate Erstellungsdatum.
+ * @apiSuccess {Number} creator Benutzer-ID des Erstellers.
+ * @apiSuccess {String} username Benutzername des Erstellers.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "postId": 1,
+ *       "text": "Hallo Welt!",
+ *       "creationDate": "2026-05-24T12:00:00.000Z",
+ *       "creator": 1,
+ *       "username": "maxm"
+ *     }
+ *
+ * @apiError (404) NotFound Post nicht gefunden.
+ * @apiErrorExample {json} Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     { "error": "Post nicht gefunden" }
+ */
 router.get('/:id', async (req, res) => {
   try {
     const post = await getPostById(req.params.id);
@@ -26,6 +80,25 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @api {post} /posts Neuen Post erstellen
+ * @apiName CreatePost
+ * @apiGroup Post
+ *
+ * @apiBody {String} text Inhalt des Posts.
+ *
+ * @apiSuccess (201) {Number} postId ID des erstellten Posts.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 201 Created
+ *     { "postId": 5 }
+ *
+ * @apiError (400) BadRequest Text fehlt.
+ * @apiError (401) Unauthorized Nicht angemeldet.
+ * @apiErrorExample {json} Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     { "error": "Text ist erforderlich" }
+ */
 router.post('/', isLoggedIn, async (req, res) => {
   try {
     const { text } = req.body;
@@ -37,6 +110,25 @@ router.post('/', isLoggedIn, async (req, res) => {
   }
 });
 
+/**
+ * @api {put} /posts/:id Post aktualisieren
+ * @apiName UpdatePost
+ * @apiGroup Post
+ *
+ * @apiParam {Number} id Post-ID.
+ * @apiBody {String} text Neuer Inhalt des Posts.
+ *
+ * @apiSuccess {String} message Erfolgsmeldung.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     { "message": "Post aktualisiert" }
+ *
+ * @apiError (400) BadRequest Text fehlt.
+ * @apiError (401) Unauthorized Nicht angemeldet.
+ * @apiError (403) Forbidden Keine Berechtigung.
+ * @apiError (404) NotFound Post nicht gefunden.
+ */
 router.put('/:id', isLoggedIn, async (req, res) => {
   try {
     const creator = await getPostCreator(req.params.id);
@@ -51,6 +143,26 @@ router.put('/:id', isLoggedIn, async (req, res) => {
   }
 });
 
+/**
+ * @api {delete} /posts/:id Post löschen
+ * @apiName DeletePost
+ * @apiGroup Post
+ *
+ * @apiParam {Number} id Post-ID.
+ *
+ * @apiSuccess {String} message Erfolgsmeldung.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     { "message": "Post gelöscht" }
+ *
+ * @apiError (401) Unauthorized Nicht angemeldet.
+ * @apiError (403) Forbidden Keine Berechtigung.
+ * @apiError (404) NotFound Post nicht gefunden.
+ * @apiErrorExample {json} Error-Response:
+ *     HTTP/1.1 403 Forbidden
+ *     { "error": "Keine Berechtigung" }
+ */
 router.delete('/:id', isLoggedIn, async (req, res) => {
   try {
     const creator = await getPostCreator(req.params.id);

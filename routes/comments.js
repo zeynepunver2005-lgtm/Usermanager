@@ -7,6 +7,39 @@ const isLoggedIn = (req, res, next) => {
   next();
 };
 
+/**
+ * @api {get} /comments?postId=:postId Kommentare eines Posts
+ * @apiName GetCommentsByPost
+ * @apiGroup Comment
+ *
+ * @apiQuery {Number} postId ID des Posts.
+ *
+ * @apiSuccess {Object[]} comments Liste der Kommentare.
+ * @apiSuccess {Number} comments.commentId ID des Kommentars.
+ * @apiSuccess {String} comments.text Kommentartext.
+ * @apiSuccess {Number} comments.origin Post-ID.
+ * @apiSuccess {Number} comments.creator Benutzer-ID des Erstellers.
+ * @apiSuccess {Number} [comments.parentId] ID des übergeordneten Kommentars (bei Antworten).
+ * @apiSuccess {String} comments.username Benutzername des Erstellers.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ *       {
+ *         "commentId": 1,
+ *         "text": "Toller Post!",
+ *         "origin": 1,
+ *         "creator": 2,
+ *         "parentId": null,
+ *         "username": "zoe"
+ *       }
+ *     ]
+ *
+ * @apiError (400) BadRequest postId fehlt.
+ * @apiErrorExample {json} Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     { "error": "postId erforderlich" }
+ */
 router.get('/', async (req, res) => {
   try {
     const { postId } = req.query;
@@ -18,6 +51,36 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * @api {get} /comments/:id Kommentar nach ID
+ * @apiName GetCommentById
+ * @apiGroup Comment
+ *
+ * @apiParam {Number} id Kommentar-ID.
+ *
+ * @apiSuccess {Number} commentId ID des Kommentars.
+ * @apiSuccess {String} text Kommentartext.
+ * @apiSuccess {Number} origin Post-ID.
+ * @apiSuccess {Number} creator Benutzer-ID.
+ * @apiSuccess {Number} [parentId] ID des übergeordneten Kommentars.
+ * @apiSuccess {String} username Benutzername.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "commentId": 1,
+ *       "text": "Toller Post!",
+ *       "origin": 1,
+ *       "creator": 2,
+ *       "parentId": null,
+ *       "username": "zoe"
+ *     }
+ *
+ * @apiError (404) NotFound Kommentar nicht gefunden.
+ * @apiErrorExample {json} Error-Response:
+ *     HTTP/1.1 404 Not Found
+ *     { "error": "Kommentar nicht gefunden" }
+ */
 router.get('/:id', async (req, res) => {
   try {
     const comment = await getCommentById(req.params.id);
@@ -28,6 +91,27 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @api {post} /comments Neuen Kommentar erstellen
+ * @apiName CreateComment
+ * @apiGroup Comment
+ *
+ * @apiBody {String} text Kommentartext.
+ * @apiBody {Number} origin Post-ID.
+ * @apiBody {Number} [parentId] ID des übergeordneten Kommentars (bei Antworten).
+ *
+ * @apiSuccess (201) {Number} commentId ID des erstellten Kommentars.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 201 Created
+ *     { "commentId": 7 }
+ *
+ * @apiError (400) BadRequest Text oder origin fehlt.
+ * @apiError (401) Unauthorized Nicht angemeldet.
+ * @apiErrorExample {json} Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     { "error": "Text und origin erforderlich" }
+ */
 router.post('/', isLoggedIn, async (req, res) => {
   try {
     const { text, origin, parentId } = req.body;
@@ -39,6 +123,25 @@ router.post('/', isLoggedIn, async (req, res) => {
   }
 });
 
+/**
+ * @api {put} /comments/:id Kommentar aktualisieren
+ * @apiName UpdateComment
+ * @apiGroup Comment
+ *
+ * @apiParam {Number} id Kommentar-ID.
+ * @apiBody {String} text Neuer Kommentartext.
+ *
+ * @apiSuccess {String} message Erfolgsmeldung.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     { "message": "Kommentar aktualisiert" }
+ *
+ * @apiError (400) BadRequest Text fehlt.
+ * @apiError (401) Unauthorized Nicht angemeldet.
+ * @apiError (403) Forbidden Keine Berechtigung.
+ * @apiError (404) NotFound Kommentar nicht gefunden.
+ */
 router.put('/:id', isLoggedIn, async (req, res) => {
   try {
     const creator = await getCommentCreator(req.params.id);
@@ -53,6 +156,26 @@ router.put('/:id', isLoggedIn, async (req, res) => {
   }
 });
 
+/**
+ * @api {delete} /comments/:id Kommentar löschen
+ * @apiName DeleteComment
+ * @apiGroup Comment
+ *
+ * @apiParam {Number} id Kommentar-ID.
+ *
+ * @apiSuccess {String} message Erfolgsmeldung.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     { "message": "Kommentar gelöscht" }
+ *
+ * @apiError (401) Unauthorized Nicht angemeldet.
+ * @apiError (403) Forbidden Keine Berechtigung.
+ * @apiError (404) NotFound Kommentar nicht gefunden.
+ * @apiErrorExample {json} Error-Response:
+ *     HTTP/1.1 403 Forbidden
+ *     { "error": "Keine Berechtigung" }
+ */
 router.delete('/:id', isLoggedIn, async (req, res) => {
   try {
     const creator = await getCommentCreator(req.params.id);
