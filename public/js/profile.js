@@ -49,11 +49,12 @@ async function loadProfile() {
   document.getElementById('edit-username').value  = user.username;
   document.getElementById('edit-email').value     = user.email;
   document.getElementById('edit-bio').value       = user.bio || '';
-  document.getElementById('edit-password').value  = '';
   document.getElementById('profile-hero').style.display = 'flex';
 }
 
+/* ── PROFİL DÜZENLEME ── */
 function openEditPanel() {
+  closePasswordPanel();
   document.getElementById('edit-panel').style.display = 'block';
   document.getElementById('edit-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -68,15 +69,14 @@ async function saveProfile() {
   const username  = document.getElementById('edit-username').value.trim();
   const email     = document.getElementById('edit-email').value.trim();
   const bio       = document.getElementById('edit-bio').value.trim();
-  const password  = document.getElementById('edit-password').value;
-  if (!firstname || !lastname || !username || !email || !password) {
-    document.getElementById('edit-error').textContent = 'Bitte alle Pflichtfelder ausfüllen (inkl. Passwort).';
+  if (!firstname || !lastname || !username || !email) {
+    document.getElementById('edit-error').textContent = 'Bitte alle Pflichtfelder ausfüllen.';
     return;
   }
   const res = await fetch(`/api/users/${currentUser.userId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ firstname, lastname, username, email, password, bio })
+    body: JSON.stringify({ firstname, lastname, username, email, bio })
   });
   const data = await res.json();
   if (!res.ok) { document.getElementById('edit-error').textContent = data.error; return; }
@@ -86,6 +86,52 @@ async function saveProfile() {
   await loadProfile();
 }
 
+/* ── ŞİFRE DEĞİŞTİR ── */
+function openPasswordPanel() {
+  closeEditPanel();
+  document.getElementById('pw-old').value = '';
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-confirm').value = '';
+  document.getElementById('pw-error').textContent = '';
+  document.getElementById('password-panel').style.display = 'block';
+  document.getElementById('password-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function closePasswordPanel() {
+  document.getElementById('password-panel').style.display = 'none';
+  document.getElementById('pw-error').textContent = '';
+}
+
+async function savePassword() {
+  const oldPassword = document.getElementById('pw-old').value;
+  const newPassword = document.getElementById('pw-new').value;
+  const confirm     = document.getElementById('pw-confirm').value;
+
+  if (!oldPassword || !newPassword || !confirm) {
+    document.getElementById('pw-error').textContent = 'Bitte alle Felder ausfüllen.';
+    return;
+  }
+  if (newPassword.length < 6) {
+    document.getElementById('pw-error').textContent = 'Neues Passwort muss mindestens 6 Zeichen lang sein.';
+    return;
+  }
+  if (newPassword !== confirm) {
+    document.getElementById('pw-error').textContent = 'Passwörter stimmen nicht überein.';
+    return;
+  }
+
+  const res = await fetch(`/api/users/${currentUser.userId}/password`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ oldPassword, newPassword })
+  });
+  const data = await res.json();
+  if (!res.ok) { document.getElementById('pw-error').textContent = data.error; return; }
+
+  closePasswordPanel();
+  showModal('✅', 'Passwort erfolgreich geändert!', () => {}, 'OK');
+}
+
+/* ── TABS ── */
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((btn, i) => {
     btn.classList.toggle('active', ['posts','comments','reactions'][i] === name);
@@ -101,10 +147,7 @@ async function loadMyPosts() {
   const allPosts = await res.json();
   const mine = allPosts.filter(p => p.creator === currentUser.userId);
   const container = document.getElementById('my-posts-list');
-  if (mine.length === 0) {
-    container.innerHTML = '<div class="empty-msg">Noch keine Posts.</div>';
-    return;
-  }
+  if (mine.length === 0) { container.innerHTML = '<div class="empty-msg">Noch keine Posts.</div>'; return; }
   container.innerHTML = '';
   mine.forEach(post => {
     const timeStr = new Date(post.creationDate).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
@@ -145,10 +188,7 @@ async function togglePostComments(postId, btn) {
   acc.dataset.loaded = '1';
   const res = await fetch(`/api/comments?postId=${postId}`);
   const comments = await res.json();
-  if (comments.length === 0) {
-    acc.innerHTML = '<div style="font-size:12px;color:#9CA3AF">Noch keine Kommentare.</div>';
-    return;
-  }
+  if (comments.length === 0) { acc.innerHTML = '<div style="font-size:12px;color:#9CA3AF">Noch keine Kommentare.</div>'; return; }
   acc.innerHTML = comments.map(c => `
     <div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px solid #F9E8FF">
       <span style="font-size:11px;font-weight:600;color:#7C3AED;min-width:60px">${escHtml(c.username)}</span>
@@ -169,10 +209,7 @@ function cancelProfPost(id) {
 async function saveProfPost(id) {
   const text = document.getElementById(`prof-post-input-${id}`).value.trim();
   if (!text) return;
-  await fetch(`/api/posts/${id}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
-  });
+  await fetch(`/api/posts/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text }) });
   loadMyPosts();
 }
 function deleteProfPost(id) {
@@ -190,22 +227,14 @@ async function loadMyComments() {
   const comments = await res.json();
   if (comments.length === 0) { container.innerHTML = '<div class="empty-msg">Noch keine Kommentare.</div>'; return; }
 
-  // Tüm yorumları bir map'e al, parent text'i bulmak için
-  // Her yorum için: hangi posta ait + eğer reply ise kime reply
-  const commentMap = {};
-  comments.forEach(c => { commentMap[c.commentId] = c; });
-
   container.innerHTML = '';
   comments.forEach(c => {
     const card = document.createElement('div');
     card.className = 'item-card';
     card.id = `prof-comment-${c.commentId}`;
-    card.style.cursor = 'default';
 
-    // Parent yorum satırı: eğer parentId varsa o yorumu bul
     let contextHtml = '';
     if (c.parentId) {
-      // parentId'nin text'ini bulmak için aynı listedeki yorumu ara
       const parent = comments.find(x => x.commentId === c.parentId);
       const parentText = parent
         ? `↩ <b style="color:#7C3AED">${escHtml(parent.username)}</b>: "${escHtml(parent.text.slice(0,50))}${parent.text.length>50?'…':''}"`
@@ -213,7 +242,6 @@ async function loadMyComments() {
       contextHtml = `<div class="item-card-ref" style="margin-bottom:6px">${parentText}</div>`;
     }
 
-    // Post linki
     const postSnippet = escHtml(c.postText.slice(0,60)) + (c.postText.length>60?'…':'');
 
     card.innerHTML = `
@@ -227,7 +255,7 @@ async function loadMyComments() {
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
-        <a href="index.html#post-${c.origin}" class="item-card-ref" style="font-size:11px;color:#C084FC;text-decoration:none;flex:1;cursor:pointer" title="Zum Post gehen">
+        <a href="index.html#post-${c.origin}" style="font-size:11px;color:#C084FC;text-decoration:none;flex:1" title="Zum Post gehen">
           📌 ${postSnippet}
         </a>
         <button class="btn-edit"   style="font-size:11px;padding:3px 10px" onclick="editProfComment(${c.commentId})">✏️</button>
@@ -250,10 +278,7 @@ function cancelProfComment(id) {
 async function saveProfComment(id) {
   const text = document.getElementById(`prof-comment-input-${id}`).value.trim();
   if (!text) return;
-  await fetch(`/api/comments/${id}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
-  });
+  await fetch(`/api/comments/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text }) });
   loadMyComments();
 }
 function deleteProfComment(id) {
@@ -283,7 +308,7 @@ function showModal(icon, message, onConfirm, confirmLabel = 'Löschen') {
     <div style="font-size:15px;font-weight:500;color:#1E1E2E;line-height:1.5">${message}</div>
     <div style="display:flex;gap:10px;justify-content:center">
       <button class="btn-outline" onclick="closeSharedModal()">Abbrechen</button>
-      <button class="btn-delete" style="border-radius:20px;padding:8px 20px;font-size:13px" id="modal-confirm-btn">${confirmLabel}</button>
+      <button class="${confirmLabel === 'OK' ? 'btn-primary' : 'btn-delete'}" style="border-radius:20px;padding:8px 20px;font-size:13px" id="modal-confirm-btn">${confirmLabel}</button>
     </div>
   `;
   overlay.classList.add('active');

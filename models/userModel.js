@@ -14,6 +14,11 @@ const getUserById = async (id) => {
   return rows[0];
 };
 
+const getUserPasswordById = async (id) => {
+  const [rows] = await db.query('SELECT password FROM User WHERE userId = ?', [id]);
+  return rows[0]?.password;
+};
+
 const createUser = async (firstname, lastname, username, email, password) => {
   const hashed = await bcrypt.hash(password, 10);
   const [result] = await db.query(
@@ -23,11 +28,22 @@ const createUser = async (firstname, lastname, username, email, password) => {
   return result.insertId;
 };
 
-const updateUser = async (id, firstname, lastname, username, email, password, bio) => {
-  const hashed = await bcrypt.hash(password, 10);
+const updateUser = async (id, firstname, lastname, username, email, bio) => {
   const [result] = await db.query(
-    'UPDATE User SET firstname=?, lastname=?, username=?, email=?, password=?, bio=? WHERE userId=?',
-    [firstname, lastname, username, email, hashed, bio, id]
+    'UPDATE User SET firstname=?, lastname=?, username=?, email=?, bio=? WHERE userId=?',
+    [firstname, lastname, username, email, bio, id]
+  );
+  return result.affectedRows;
+};
+
+const updatePassword = async (id, oldPassword, newPassword) => {
+  const currentHash = await getUserPasswordById(id);
+  const isSame = await bcrypt.compare(oldPassword, currentHash);
+  if (!isSame) throw new Error('WRONG_PASSWORD');
+  const hashed = await bcrypt.hash(newPassword, 10);
+  const [result] = await db.query(
+    'UPDATE User SET password=? WHERE userId=?',
+    [hashed, id]
   );
   return result.affectedRows;
 };
@@ -42,4 +58,4 @@ const getUserByUsername = async (username) => {
   return rows[0];
 };
 
-module.exports = { getAllUsers, getUserById, createUser, updateUser, deleteUser, getUserByUsername };
+module.exports = { getAllUsers, getUserById, createUser, updateUser, updatePassword, deleteUser, getUserByUsername };

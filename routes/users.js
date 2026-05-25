@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const { getAllUsers, getUserById, createUser, updateUser, deleteUser, getUserByUsername } = require('../models/userModel');
+const { getAllUsers, getUserById, createUser, updateUser, updatePassword, deleteUser, getUserByUsername } = require('../models/userModel');
 
 const isLoggedIn = (req, res, next) => {
   if (!req.session.userId) return res.status(401).json({ error: 'Nicht angemeldet' });
@@ -15,8 +15,7 @@ const isOwner = (req, res, next) => {
   next();
 };
 
-// ── Sabit route'lar ÖNCE (/:id den önce gelmeli) ──
-
+// ── Sabit route'lar önce ──
 router.get('/me', (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'Nicht angemeldet' });
   res.json({ userId: req.session.userId, username: req.session.username });
@@ -35,9 +34,7 @@ router.get('/mycomments/:id', isLoggedIn, async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username und Passwort erforderlich' });
-    }
+    if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
     const user = await getUserByUsername(username);
     if (!user) return res.status(400).json({ error: 'Ungültige Anmeldedaten' });
     const match = await bcrypt.compare(password, user.password);
@@ -73,15 +70,12 @@ router.post('/', async (req, res) => {
     const id = await createUser(firstname, lastname, username, email, password);
     res.status(201).json({ userId: id });
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ error: 'Username oder Email bereits vergeben' });
-    }
+    if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Username oder Email bereits vergeben' });
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── :id route'ları EN SONDA ──
-
+// ── :id route'ları en sonda ──
 router.get('/:id', async (req, res) => {
   try {
     const user = await getUserById(req.params.id);
@@ -94,16 +88,35 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', isLoggedIn, isOwner, async (req, res) => {
   try {
-    const { firstname, lastname, username, email, password, bio } = req.body;
-    if (!firstname || !lastname || !username || !email || !password) {
+    const { firstname, lastname, username, email, bio } = req.body;
+    if (!firstname || !lastname || !username || !email) {
       return res.status(400).json({ error: 'Alle Felder sind erforderlich' });
     }
-    const affected = await updateUser(req.params.id, firstname, lastname, username, email, password, bio || '');
+    const affected = await updateUser(req.params.id, firstname, lastname, username, email, bio || '');
     if (affected === 0) return res.status(404).json({ error: 'User nicht gefunden' });
     req.session.username = username;
     res.json({ message: 'User aktualisiert' });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Username oder Email bereits vergeben' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/:id/password', isLoggedIn, isOwner, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Altes und neues Passwort erforderlich' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Neues Passwort muss mindestens 6 Zeichen lang sein' });
+    }
+    await updatePassword(req.params.id, oldPassword, newPassword);
+    res.json({ message: 'Passwort aktualisiert' });
+  } catch (err) {
+    if (err.message === 'WRONG_PASSWORD') {
+      return res.status(400).json({ error: 'Aktuelles Passwort ist falsch' });
+    }
     res.status(500).json({ error: err.message });
   }
 });
