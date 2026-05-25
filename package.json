@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "apidoc": "apidoc -i routes/ -o public/apidoc/"
   },
   "keywords": [],
   "author": "",
@@ -14,5 +15,8 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "mysql2": "^3.22.3"
+  },
+  "devDependencies": {
+    "apidoc": "^1.2.0"
   }
 }
