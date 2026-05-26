@@ -1,0 +1,442 @@
+### ============================================================
+### USERMANAGER — HTTP Tests
+### REST Client for VS Code (Humao.rest-client)
+### ============================================================
+
+@base = http://localhost:3000/api
+
+### ============================================================
+### USER TESTS
+### ============================================================
+
+### [OK] Get all users
+GET {{base}}/users
+
+###
+
+### [OK] Register new user
+POST {{base}}/users
+Content-Type: application/json
+
+{
+  "firstname": "Test",
+  "lastname": "User",
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "123456"
+}
+
+###
+
+### [ERROR] Register — missing fields
+POST {{base}}/users
+Content-Type: application/json
+
+{
+  "firstname": "Test"
+}
+
+###
+
+### [ERROR] Register — duplicate username
+POST {{base}}/users
+Content-Type: application/json
+
+{
+  "firstname": "Test",
+  "lastname": "User",
+  "username": "testuser",
+  "email": "test2@example.com",
+  "password": "123456"
+}
+
+###
+
+### [OK] Login — run this first before protected routes
+POST {{base}}/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "123456"
+}
+
+###
+
+### [ERROR] Login — wrong password
+POST {{base}}/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "wrongpassword"
+}
+
+###
+
+### [ERROR] Login — missing fields
+POST {{base}}/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser"
+}
+
+###
+
+### [OK] Get current session user
+GET {{base}}/users/me
+
+###
+
+### [ERROR] Get current user — not logged in (logout first)
+GET {{base}}/users/me
+
+###
+
+### [OK] Get user by ID
+GET {{base}}/users/1
+
+###
+
+### [ERROR] Get user by ID — not found
+GET {{base}}/users/99999
+
+###
+
+### [OK] Update user (must be logged in as this user)
+PUT {{base}}/users/4
+Content-Type: application/json
+
+{
+  "firstname": "Test",
+  "lastname": "Updated",
+  "username": "testuser",
+  "email": "test@example.com",
+  "bio": "My new bio"
+}
+
+###
+
+### [ERROR] Update user — missing fields
+PUT {{base}}/users/1
+Content-Type: application/json
+
+{
+  "firstname": "Test"
+}
+
+###
+
+### [ERROR] Update user — not authorized (logged in as different user)
+PUT {{base}}/users/2
+Content-Type: application/json
+
+{
+  "firstname": "Test",
+  "lastname": "User",
+  "username": "otheruser",
+  "email": "other@example.com",
+  "bio": ""
+}
+
+###
+
+### [OK] Change password
+PUT {{base}}/users/1/password
+Content-Type: application/json
+
+{
+  "oldPassword": "123456",
+  "newPassword": "newpassword"
+}
+
+###
+
+### [ERROR] Change password — wrong old password
+PUT {{base}}/users/1/password
+Content-Type: application/json
+
+{
+  "oldPassword": "wrongpassword",
+  "newPassword": "newpassword"
+}
+
+###
+
+### [ERROR] Change password — new password too short
+PUT {{base}}/users/1/password
+Content-Type: application/json
+
+{
+  "oldPassword": "123456",
+  "newPassword": "abc"
+}
+
+###
+
+### [ERROR] Change password — missing fields
+PUT {{base}}/users/1/password
+Content-Type: application/json
+
+{
+  "oldPassword": "123456"
+}
+
+###
+
+### [OK] Logout
+POST {{base}}/users/logout
+
+###
+
+### [ERROR] Logout — not logged in
+POST {{base}}/users/logout
+
+###
+
+### [OK] Delete user (must be logged in as this user)
+DELETE {{base}}/users/1
+
+###
+
+### [ERROR] Delete user — not found
+DELETE {{base}}/users/99999
+
+###
+
+### [ERROR] Delete user — not authorized
+DELETE {{base}}/users/2
+
+###
+
+### ============================================================
+### POST TESTS
+### ============================================================
+
+### [OK] Get all posts
+GET {{base}}/posts
+
+###
+
+### [OK] Get post by ID
+GET {{base}}/posts/1
+
+###
+
+### [ERROR] Get post by ID — not found
+GET {{base}}/posts/99999
+
+###
+
+### [OK] Create new post (login required)
+POST {{base}}/posts
+Content-Type: application/json
+
+{
+  "text": "This is a test post!"
+}
+
+###
+
+### [ERROR] Create post — missing text
+POST {{base}}/posts
+Content-Type: application/json
+
+{}
+
+###
+
+### [ERROR] Create post — not logged in (logout first)
+POST {{base}}/posts
+Content-Type: application/json
+
+{
+  "text": "Should fail"
+}
+
+###
+
+### [OK] Update post (must be logged in as author)
+PUT {{base}}/posts/1
+Content-Type: application/json
+
+{
+  "text": "Updated post text"
+}
+
+###
+
+### [ERROR] Update post — missing text
+PUT {{base}}/posts/1
+Content-Type: application/json
+
+{}
+
+###
+
+### [ERROR] Update post — not authorized (logged in as different user)
+PUT {{base}}/posts/2
+Content-Type: application/json
+
+{
+  "text": "Someone else's post"
+}
+
+###
+
+### [ERROR] Update post — not found
+PUT {{base}}/posts/99999
+Content-Type: application/json
+
+{
+  "text": "Does not exist"
+}
+
+###
+
+### [OK] Delete post (must be logged in as author)
+DELETE {{base}}/posts/1
+
+###
+
+### [ERROR] Delete post — not found
+DELETE {{base}}/posts/99999
+
+###
+
+### [ERROR] Delete post — not authorized (logged in as different user)
+DELETE {{base}}/posts/2
+
+###
+
+### ============================================================
+### COMMENT TESTS
+### ============================================================
+
+### [OK] Get comments by post
+GET {{base}}/comments?postId=1
+
+###
+
+### [ERROR] Get comments — missing postId
+GET {{base}}/comments
+
+###
+
+### [OK] Get comment by ID
+GET {{base}}/comments/1
+
+###
+
+### [ERROR] Get comment by ID — not found
+GET {{base}}/comments/99999
+
+###
+
+### [OK] Create new comment (login required)
+POST {{base}}/comments
+Content-Type: application/json
+
+{
+  "text": "This is a test comment!",
+  "origin": 1
+}
+
+###
+
+### [OK] Create reply to comment (with parentId)
+POST {{base}}/comments
+Content-Type: application/json
+
+{
+  "text": "This is a reply!",
+  "origin": 1,
+  "parentId": 1
+}
+
+###
+
+### [ERROR] Create comment — missing text
+POST {{base}}/comments
+Content-Type: application/json
+
+{
+  "origin": 1
+}
+
+###
+
+### [ERROR] Create comment — missing origin
+POST {{base}}/comments
+Content-Type: application/json
+
+{
+  "text": "No origin"
+}
+
+###
+
+### [ERROR] Create comment — not logged in (logout first)
+POST {{base}}/comments
+Content-Type: application/json
+
+{
+  "text": "Should fail",
+  "origin": 1
+}
+
+###
+
+### [OK] Update comment (must be logged in as author)
+PUT {{base}}/comments/1
+Content-Type: application/json
+
+{
+  "text": "Updated comment text"
+}
+
+###
+
+### [ERROR] Update comment — missing text
+PUT {{base}}/comments/1
+Content-Type: application/json
+
+{}
+
+###
+
+### [ERROR] Update comment — not found
+PUT {{base}}/comments/99999
+Content-Type: application/json
+
+{
+  "text": "Does not exist"
+}
+
+###
+
+### [ERROR] Update comment — not authorized (logged in as different user)
+PUT {{base}}/comments/2
+Content-Type: application/json
+
+{
+  "text": "Someone else's comment"
+}
+
+###
+
+### [OK] Delete comment (must be logged in as author)
+DELETE {{base}}/comments/1
+
+###
+
+### [ERROR] Delete comment — not found
+DELETE {{base}}/comments/99999
+
+###
+
+### [ERROR] Delete comment — not authorized (logged in as different user)
+DELETE {{base}}/comments/2
+
+###

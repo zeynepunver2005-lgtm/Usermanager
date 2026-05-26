@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.45, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: usermanager
+-- Host: localhost    Database: usermanager
 -- ------------------------------------------------------
 -- Server version	8.0.45-0ubuntu0.24.04.1
 
@@ -27,12 +27,15 @@ CREATE TABLE `Comment` (
   `text` text NOT NULL,
   `origin` int NOT NULL,
   `creator` int NOT NULL,
+  `parentId` int DEFAULT NULL,
   PRIMARY KEY (`commentId`),
   KEY `origin` (`origin`),
   KEY `creator` (`creator`),
+  KEY `parentId` (`parentId`),
   CONSTRAINT `Comment_ibfk_1` FOREIGN KEY (`origin`) REFERENCES `Post` (`postId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `Comment_ibfk_2` FOREIGN KEY (`creator`) REFERENCES `User` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `Comment_ibfk_2` FOREIGN KEY (`creator`) REFERENCES `User` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `Comment_ibfk_3` FOREIGN KEY (`parentId`) REFERENCES `Comment` (`commentId`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -41,6 +44,7 @@ CREATE TABLE `Comment` (
 
 LOCK TABLES `Comment` WRITE;
 /*!40000 ALTER TABLE `Comment` DISABLE KEYS */;
+INSERT INTO `Comment` VALUES (1,'Toller Post!',1,1,NULL),(2,'nooooiii',2,2,NULL),(3,'yess',2,2,NULL),(4,'@bloom yessss',2,3,2),(5,'@zoe whyyyy',2,2,4),(7,'definetelyyyy',6,1,NULL),(8,'@bloom hii',2,1,3);
 /*!40000 ALTER TABLE `Comment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -59,7 +63,7 @@ CREATE TABLE `Post` (
   PRIMARY KEY (`postId`),
   KEY `creator` (`creator`),
   CONSTRAINT `Post_ibfk_1` FOREIGN KEY (`creator`) REFERENCES `User` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,6 +72,7 @@ CREATE TABLE `Post` (
 
 LOCK TABLES `Post` WRITE;
 /*!40000 ALTER TABLE `Post` DISABLE KEYS */;
+INSERT INTO `Post` VALUES (1,'Mein erster Post!','2026-05-24 13:06:20',1),(2,'hello','2026-05-24 13:45:26',2),(3,'hiii  :)','2026-05-24 13:51:04',3),(5,'off campus is still waiting for me','2026-05-24 14:41:51',2),(6,'logan is betterrr','2026-05-24 15:16:14',2),(8,'how are you doing guysss?','2026-05-26 01:23:13',1);
 /*!40000 ALTER TABLE `Post` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -85,10 +90,11 @@ CREATE TABLE `User` (
   `username` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `bio` text,
   PRIMARY KEY (`userId`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -97,6 +103,7 @@ CREATE TABLE `User` (
 
 LOCK TABLES `User` WRITE;
 /*!40000 ALTER TABLE `User` DISABLE KEYS */;
+INSERT INTO `User` VALUES (1,'Beyza','Arikan','beyza','beyza@test.com','$2b$10$x6V.l4UBlIldsdviFfSyi.k3h2XAzM4Cqfix995Ychwck21X0k0YO',NULL),(2,'beyza','arıkan','bloom','beyzaarikan14@gmail.com','$2b$10$4AecXV/zcaiWgNGoqot09eAW88bUktkhWJt3dWWkaJ97WAZZtklgq','hello from the other sidee'),(3,'zeynep','Ünver','zoe','zeynepunver2005@gmail.com','$2b$10$vf.9OBuuvSL/iElPTCCSje04f3KRhaTeIrRMomkxpR2uvYoR0.j4C',NULL);
 /*!40000 ALTER TABLE `User` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -109,4 +116,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-23 19:44:06
+-- Dump completed on 2026-05-26  2:04:49
