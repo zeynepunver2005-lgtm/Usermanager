@@ -36,6 +36,9 @@ async function loadProfile() {
   document.getElementById('hero-avatar').textContent = user.username.slice(0,2).toUpperCase();
   document.getElementById('hero-username').textContent = user.username;
   document.getElementById('hero-email').textContent = user.email;
+
+  // Post + Kommentar sayacı
+  loadCounts();
   if (user.bio && user.bio.trim()) {
     document.getElementById('bio-text').textContent = user.bio;
     document.getElementById('bio-text').style.display = 'block';
@@ -50,6 +53,39 @@ async function loadProfile() {
   document.getElementById('edit-email').value     = user.email;
   document.getElementById('edit-bio').value       = user.bio || '';
   document.getElementById('profile-hero').style.display = 'flex';
+}
+
+/* ── COUNTS ── */
+async function loadCounts() {
+  try {
+    const [postsRes, commentsRes] = await Promise.all([
+      fetch('/api/posts'),
+      fetch(`/api/users/mycomments/${currentUser.userId}`)
+    ]);
+    const posts      = await postsRes.json();
+    const comments   = await commentsRes.json();
+    const myPosts    = posts.filter(p => p.creator === currentUser.userId).length;
+    const myComments = comments.length;
+    const el = document.getElementById('hero-counts');
+    if (el) el.innerHTML = `
+      <span style="background:#FAF0FF;border:1px solid #E9D5FF;border-radius:20px;padding:4px 12px;font-size:12px;color:#7C3AED;font-weight:500">
+        📝 ${myPosts} Post${myPosts !== 1 ? 's' : ''}
+      </span>
+      <span style="background:#FAF0FF;border:1px solid #E9D5FF;border-radius:20px;padding:4px 12px;font-size:12px;color:#7C3AED;font-weight:500">
+        💬 ${myComments} Kommentar${myComments !== 1 ? 'e' : ''}
+      </span>
+    `;
+  } catch (_) {}
+}
+
+/* ── RELATIVE TIME ── */
+function relativeTime(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60)    return 'gerade eben';
+  if (diff < 3600)  { const m = Math.floor(diff/60);    return `vor ${m} Minute${m!==1?'n':''}`; }
+  if (diff < 86400) { const h = Math.floor(diff/3600);  return `vor ${h} Stunde${h!==1?'n':''}`; }
+  if (diff < 604800){ const d = Math.floor(diff/86400); return `vor ${d} Tag${d!==1?'en':''}`; }
+  return new Date(dateStr).toLocaleDateString('de-DE', { dateStyle: 'short' });
 }
 
 /* ── PROFİL DÜZENLEME ── */
@@ -150,7 +186,7 @@ async function loadMyPosts() {
   if (mine.length === 0) { container.innerHTML = '<div class="empty-msg">Noch keine Posts.</div>'; return; }
   container.innerHTML = '';
   mine.forEach(post => {
-    const timeStr = new Date(post.creationDate).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+    const timeStr = relativeTime(post.creationDate);
     const card = document.createElement('div');
     card.className = 'item-card';
     card.id = `prof-post-${post.postId}`;

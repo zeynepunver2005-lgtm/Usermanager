@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usermanager · Profil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .pub-hero {
+      background: #ffffff;
+      border: 1px solid #F4C0D1;
+      border-radius: 24px;
+      padding: 36px 32px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .pub-avatar {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #C084FC, #F4C0D1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 700; color: #ffffff;
+    }
+    .pub-username { font-size: 20px; font-weight: 700; color: #1E1E2E; margin: 0; }
+    .pub-bio {
+      font-size: 14px; color: #4B5563; text-align: center;
+      max-width: 420px; line-height: 1.6; font-style: italic;
+    }
+    .pub-bio-empty { font-size: 13px; color: #C4A8E0; text-align: center; }
+
+    .section-title {
+      font-size: 15px; font-weight: 600; color: #7C3AED;
+      margin-bottom: 14px;
+    }
+    .pub-post-card {
+      background: #ffffff;
+      border: 1px solid #F4C0D1;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .pub-post-time { font-size: 11px; color: #C084FC; font-weight: 500; margin-bottom: 4px; }
+    .pub-post-text { font-size: 14px; color: #1E1E2E; line-height: 1.55; }
+    .empty-msg { font-size: 13px; color: #9CA3AF; text-align: center; padding: 24px 0; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-logo">🌸 Usermanager</a>
+  <div class="navbar-right" id="navbar-right">
+    <a href="index.html" class="btn-outline">← Feed</a>
+  </div>
+</nav>
+
+<main style="max-width:640px;margin:0 auto;padding:24px 16px 60px">
+
+  <div class="pub-hero" id="pub-hero" style="display:none">
+    <div class="pub-avatar" id="pub-avatar"></div>
+    <p class="pub-username" id="pub-username"></p>
+    <p class="pub-bio" id="pub-bio" style="display:none"></p>
+    <p class="pub-bio-empty" id="pub-bio-empty" style="display:none">Noch keine Bio.</p>
+  </div>
+
+  <div id="pub-posts-section" style="display:none">
+    <div class="section-title">📝 Posts</div>
+    <div id="pub-posts-list"></div>
+  </div>
+
+</main>
+
+<script src="js/user.js"></script>
+</body>
+</html>

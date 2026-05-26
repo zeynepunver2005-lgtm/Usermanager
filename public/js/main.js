@@ -3,6 +3,7 @@ let currentUser = null;
 document.addEventListener('DOMContentLoaded', () => {
   checkSession();
   loadFeed();
+  initUserSearch();
 });
 
 async function checkSession() {
@@ -83,6 +84,17 @@ async function loadFeed() {
     const posts = await res.json();
     const feed = document.getElementById('feed');
     feed.innerHTML = '';
+
+    if (posts.length === 0) {
+      feed.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:#C4A8E0">
+          <div style="font-size:48px;margin-bottom:16px">🌸</div>
+          <div style="font-size:16px;font-weight:600;color:#7C3AED;margin-bottom:8px">Noch keine Posts</div>
+          <div style="font-size:13px;color:#9CA3AF">Sei der Erste und teile etwas!</div>
+        </div>`;
+      return;
+    }
+
     for (const post of posts) feed.appendChild(await createPostCard(post));
   } catch (_) {}
 }
@@ -142,7 +154,7 @@ async function createPostCard(post) {
   const isOwner     = currentUser && currentUser.userId === post.creator;
   const avatarClass = ['avatar-purple','avatar-pink','avatar-yellow'][post.creator % 3];
   const initials    = post.username.slice(0,2).toUpperCase();
-  const timeStr     = new Date(post.creationDate).toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'});
+  const timeStr     = relativeTime(post.creationDate);
   const card        = document.createElement('div');
   card.className    = 'post-card';
   card.id           = `post-${post.postId}`;
@@ -151,7 +163,7 @@ async function createPostCard(post) {
     <div class="post-header">
       <div class="avatar ${avatarClass}">${initials}</div>
       <div class="post-meta">
-        <div class="username">${post.username}</div>
+        <div class="username"><a href="user.html?id=${post.creator}" style="color:inherit;text-decoration:none">${post.username}</a></div>
         <div class="post-time">${timeStr}</div>
       </div>
     </div>
@@ -204,7 +216,7 @@ function renderCommentNode(c, depth) {
   return `
     <div id="comment-${c.commentId}" style="${ml}background:${depth>0?'#FDFAFF':'#FFF0FB'};border-radius:10px;padding:7px 12px;${depth>0?'border-left:2px solid #E9D5FF;':''}">
       <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:3px">
-        <span style="font-size:12px;font-weight:600;color:#7C3AED">${c.username}</span>
+        <a href="user.html?id=${c.creator}" style="font-size:12px;font-weight:600;color:#7C3AED;text-decoration:none">${c.username}</a>
         ${depth>0?'<span style="font-size:10px;color:#C084FC">Antwort</span>':''}
       </div>
       <div id="comment-text-${c.commentId}" style="font-size:13px;color:#374151;line-height:1.45">${c.text}</div>
@@ -343,4 +355,85 @@ function deleteComment(commentId) {
 
 function escAttr(str) {
   return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── CHARACTER COUNTER ── */
+function updateCharCount() {
+  const textarea = document.getElementById('new-post-text');
+  const counter  = document.getElementById('char-count');
+  if (!textarea || !counter) return;
+  const remaining = 120 - textarea.value.length;
+  counter.textContent = `${remaining} Zeichen übrig`;
+  counter.style.color = remaining < 35 ? '#EF4444' : remaining < 80 ? '#F59E0B' : '#C4A8E0';
+}
+
+/* ── RELATIVE TIME ── */
+function relativeTime(dateStr) {
+  const now  = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = Math.floor((now - then) / 1000);
+
+  if (diff < 60)   return 'gerade eben';
+  if (diff < 3600) {
+    const m = Math.floor(diff / 60);
+    return `vor ${m} Minute${m !== 1 ? 'n' : ''}`;
+  }
+  if (diff < 86400) {
+    const h = Math.floor(diff / 3600);
+    return `vor ${h} Stunde${h !== 1 ? 'n' : ''}`;
+  }
+  if (diff < 86400 * 7) {
+    const d = Math.floor(diff / 86400);
+    return `vor ${d} Tag${d !== 1 ? 'en' : ''}`;
+  }
+  return new Date(dateStr).toLocaleDateString('de-DE', { dateStyle: 'short' });
+}
+
+/* ── USER SEARCH ── */
+let allUsers = [];
+
+async function initUserSearch() {
+  try {
+    const res = await fetch('/api/users');
+    if (res.ok) allUsers = await res.json();
+  } catch (_) {}
+
+  const input = document.getElementById('user-search-input');
+  const dropdown = document.getElementById('user-search-dropdown');
+  if (!input || !dropdown) return;
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { dropdown.style.display = 'none'; return; }
+
+    const matches = allUsers.filter(u =>
+      u.username.toLowerCase().includes(q) ||
+      (u.firstname + ' ' + u.lastname).toLowerCase().includes(q)
+    ).slice(0, 6);
+
+    if (matches.length === 0) { dropdown.style.display = 'none'; return; }
+
+    dropdown.innerHTML = matches.map(u => `
+      <a href="user.html?id=${u.userId}" class="search-result-item">
+        <div class="search-result-avatar">${u.username.slice(0,2).toUpperCase()}</div>
+        <div class="search-result-info">
+          <div class="search-result-name">${escHtml(u.username)}</div>
+          ${u.bio ? `<div class="search-result-bio">${escHtml(u.bio.slice(0,40))}${u.bio.length>40?'…':''}</div>` : ''}
+        </div>
+      </a>
+    `).join('');
+    dropdown.style.display = 'block';
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { dropdown.style.display = 'none'; input.value = ''; }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#user-search-wrap')) dropdown.style.display = 'none';
+  });
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
